@@ -34,7 +34,7 @@ export const authStyles = StyleSheet.create({
     marginVertical: 12,
   },
   buttonText: {
-    color: '#fff',
+    // Dark text will be applied dynamically based on the background color
     fontSize: 18,
     fontWeight: '600',
   },

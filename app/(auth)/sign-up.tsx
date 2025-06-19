@@ -153,7 +153,10 @@ export default function SignUpScreen() {
             {isLoading ? (
               <ActivityIndicator color="#fff" />
             ) : (
-              <ThemedText style={authStyles.buttonText}>Sign Up</ThemedText>
+              <ThemedText style={[
+                authStyles.buttonText, 
+                { color: primaryColor === '#ffffff' || primaryColor === '#fff' ? '#000' : '#fff' }
+              ]}>Sign Up</ThemedText>
             )}
           </TouchableOpacity>
           

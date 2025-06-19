@@ -48,13 +48,25 @@ export default function FloatingActionButton({
     }
   };
 
+  // Determine if the button has a light background color
+  const isLightColor = (color: string) => {
+    // Simple check: if the color starts with a light color code or is a light named color
+    const lightColors = ['#fff', '#f', '#e', '#d', '#c', '#b', '#a'];
+    const colorLower = color.toLowerCase();
+    return lightColors.some(lc => colorLower.startsWith(lc)) || 
+           ['white', 'yellow', 'lightblue', 'lightgreen', 'pink'].includes(colorLower);
+  };
+
+  // Use dark text on light backgrounds, white text on dark backgrounds
+  const textColor = isLightColor(color) ? '#000000' : '#FFFFFF';
+
   return (
     <TouchableOpacity 
       style={[styles.button, { backgroundColor: color }]} 
       onPress={handlePress}
       activeOpacity={0.8}
     >
-      <MaterialIcons name={getIconName(iconName) as any} size={24} color="#FFFFFF" />
+      <MaterialIcons name={getIconName(iconName) as any} size={24} color={textColor} />
     </TouchableOpacity>
   );
 }

@@ -110,7 +110,10 @@ export default function ForgotPasswordScreen() {
             {isLoading ? (
               <ActivityIndicator color="#fff" />
             ) : (
-              <ThemedText style={authStyles.buttonText}>Reset Password</ThemedText>
+              <ThemedText style={[
+                authStyles.buttonText, 
+                { color: primaryColor === '#ffffff' || primaryColor === '#fff' ? '#000' : '#fff' }
+              ]}>Reset Password</ThemedText>
             )}
           </TouchableOpacity>
           

@@ -1,6 +1,7 @@
 import PostCard from '@/components/PostCard';
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
+import ThemeToggleButton from '@/components/ThemeToggleButton';
 import { useAuth } from '@/context/AuthContext';
 import { Comment, Post, usePostsStorage } from '@/hooks/usePostsStorage';
 import { useThemeColor } from '@/hooks/useThemeColor';
@@ -156,11 +157,11 @@ export default function ProfileScreen() {
       <View style={styles.header}>
         <View style={styles.profileImageContainer}>
           {/* Profile image placeholder - in a real app, you'd use the user's image */}
-          <View style={[styles.profileImage, { backgroundColor: secondaryColor + '40' }]}>
+          <ThemedView style={[styles.profileImage, { overflow: 'hidden' }]}>
             <ThemedText style={styles.profileImageInitial}>
               {userInitial}
             </ThemedText>
-          </View>
+          </ThemedView>
         </View>
         
         <ThemedText style={styles.username}>@{userName || 'username'}</ThemedText>
@@ -180,12 +181,19 @@ export default function ProfileScreen() {
           </View>
         </View>
         
-        <TouchableOpacity 
-          style={styles.editButton} 
-          onPress={handleEditProfile}
-        >
-          <ThemedText style={styles.editButtonText}>Edit Profile</ThemedText>
-        </TouchableOpacity>
+        <ThemedView>
+          <TouchableOpacity 
+            style={styles.editButton} 
+            onPress={handleEditProfile}
+          >
+            <ThemedText style={styles.editButtonText}>Edit Profile</ThemedText>
+          </TouchableOpacity>
+        </ThemedView>
+        
+        <View style={styles.themeToggleContainer}>
+          <ThemedText style={styles.themeToggleText}>Toggle Theme</ThemedText>
+          <ThemeToggleButton />
+        </View>
 
         <TouchableOpacity 
           style={styles.signOutButton} 
@@ -222,31 +230,38 @@ export default function ProfileScreen() {
   // This prevents stale closures and references
   const flatListKey = `profile-posts-${userId || 'no-user'}`; 
 
+  // Get the background color for consistency
+  const backgroundColor = useThemeColor({}, 'background');
+
   return (
-    <FlatList
-      key={flatListKey}
-      data={userPosts}
-      keyExtractor={keyExtractor}
-      renderItem={renderPostCard}
-      contentContainerStyle={styles.listContent}
-      refreshControl={
-        <RefreshControl 
-          refreshing={isRefreshing} 
-          onRefresh={handleRefresh}
-          tintColor={tint}
-        />
-      }
-      ListHeaderComponent={ListHeaderComponent}
-      ListEmptyComponent={ListEmptyComponent}
-      // Enable performance optimizations
-      removeClippedSubviews={true}
-      maxToRenderPerBatch={5}
-      windowSize={5}
-      initialNumToRender={5}
-      // Avoid excessive fetches during momentum scrolling
-      onEndReachedThreshold={0.5}
-      showsVerticalScrollIndicator={false}
-    />
+    <ThemedView style={{ flex: 1 }}>
+      <FlatList
+        key={flatListKey}
+        data={userPosts}
+        keyExtractor={keyExtractor}
+        renderItem={renderPostCard}
+        contentContainerStyle={styles.listContent}
+        refreshControl={
+          <RefreshControl 
+            refreshing={isRefreshing} 
+            onRefresh={handleRefresh}
+            tintColor={tint}
+          />
+        }
+        ListHeaderComponent={ListHeaderComponent}
+        ListEmptyComponent={ListEmptyComponent}
+        // Enable performance optimizations
+        removeClippedSubviews={true}
+        maxToRenderPerBatch={5}
+        windowSize={5}
+        initialNumToRender={5}
+        // Avoid excessive fetches during momentum scrolling
+        onEndReachedThreshold={0.5}
+        showsVerticalScrollIndicator={false}
+        // Ensure consistent background color
+        style={{ backgroundColor }}
+      />
+    </ThemedView>
   );
 }
 
@@ -254,6 +269,7 @@ const styles = StyleSheet.create({
   container: {
     padding: 16,
     paddingTop: 60,
+    flex: 1,
   },
   listContent: {
     paddingBottom: 40,
@@ -370,5 +386,19 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontWeight: 'bold',
     fontSize: 16,
+  },
+  themeToggleContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 24,
+    marginBottom: 12,
+    paddingHorizontal: 16,
+    width: '100%',
+  },
+  themeToggleText: {
+    fontSize: 16,
+    fontWeight: '500',
+    marginRight: 12,
   },
 });

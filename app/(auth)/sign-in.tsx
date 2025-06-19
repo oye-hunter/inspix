@@ -120,7 +120,10 @@ export default function SignInScreen() {
             {isLoading ? (
               <ActivityIndicator color="#fff" />
             ) : (
-              <ThemedText style={authStyles.buttonText}>Sign In</ThemedText>
+              <ThemedText style={[
+                authStyles.buttonText, 
+                { color: primaryColor === '#ffffff' || primaryColor === '#fff' ? '#000' : '#fff' }
+              ]}>Sign In</ThemedText>
             )}
           </TouchableOpacity>
           
