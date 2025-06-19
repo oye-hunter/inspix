@@ -1,100 +1,181 @@
 import { useAuth } from '@/context/AuthContext';
-import { Image } from 'expo-image';
-import { StyleSheet } from 'react-native';
+import { useRouter } from 'expo-router';
+import { useCallback, useEffect, useState } from 'react';
+import { ActivityIndicator, FlatList, RefreshControl, StyleSheet, View } from 'react-native';
 
-import { HelloWave } from '@/components/HelloWave';
-import ParallaxScrollView from '@/components/ParallaxScrollView';
+import FloatingActionButton from '@/components/FloatingActionButton';
+import PostCard from '@/components/PostCard';
+import PostCreationModal from '@/components/PostCreationModal';
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
+import { Comment, Post, usePostsStorage } from '@/hooks/usePostsStorage';
+import { useThemeColor } from '@/hooks/useThemeColor';
 
 export default function HomeScreen() {
-  const { session } = useAuth();
-  const user = session?.user;
-
+  const [posts, setPosts] = useState<Post[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [modalVisible, setModalVisible] = useState(false);
+  
+  const { session, userInfo } = useAuth();
+  const { fetchPosts } = usePostsStorage();
+  const tint = useThemeColor({}, 'tint');
+  const router = useRouter();
+  
+  // Check authentication status and redirect if not authenticated
+  useEffect(() => {
+    if (!session) {
+      router.replace('/(auth)/sign-in');
+    }
+  }, [session, router]);
+  
+  const loadPosts = async () => {
+    try {
+      const { data, error } = await fetchPosts();
+      
+      if (error) {
+        console.error('Error fetching posts:', error);
+        return;
+      }
+      
+      setPosts(data);
+    } catch (error) {
+      console.error('Error in loadPosts:', error);
+    } finally {
+      setIsLoading(false);
+      setIsRefreshing(false);
+    }
+  };
+  
+  useEffect(() => {
+    loadPosts();
+  }, []);
+  
+  const handleRefresh = useCallback(() => {
+    setIsRefreshing(true);
+    loadPosts();
+  }, []);
+  
+  const handlePostCreated = useCallback(() => {
+    loadPosts();
+  }, []);
+  
+  const handleLikeToggle = useCallback((postId: string, isLiked: boolean) => {
+    setPosts(currentPosts => 
+      currentPosts.map(post => 
+        post.id === postId 
+          ? { 
+              ...post, 
+              has_liked: isLiked, 
+              likes_count: isLiked ? (post.likes_count || 0) + 1 : (post.likes_count || 1) - 1 
+            }
+          : post
+      )
+    );
+  }, []);
+  
+  const handleCommentAdded = useCallback((postId: string, comment: Comment) => {
+    // We don't need to update the posts state here since we don't show comment counts
+    // But we could if we wanted to track comment counts in the UI
+  }, []);
+  
+  const renderPostCard = ({ item }: { item: Post }) => (
+    <PostCard 
+      post={item} 
+      onLikeToggle={handleLikeToggle}
+      onCommentAdded={handleCommentAdded}
+    />
+  );
+  
+  if (isLoading) {
+    return (
+      <ThemedView style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color={tint} />
+      </ThemedView>
+    );
+  }
+  
   return (
-    <ParallaxScrollView
-      headerBackgroundColor={{ light: '#A1CEDC', dark: '#1D3D47' }}
-      headerImage={
-        <Image
-          source={require('@/assets/images/partial-react-logo.png')}
-          style={styles.reactLogo}
-        />
-      }>
-      <ThemedView style={styles.titleContainer}>
-        <ThemedText type="title">
-          Welcome{user?.email ? ', ' + user.email.split('@')[0] : ''}!
-        </ThemedText>
-        <HelloWave />
-      </ThemedView>
-
-      <ThemedView style={styles.card}>
-        <ThemedText type="subtitle">Your Dashboard</ThemedText>
-        <ThemedText>
-          This is your main dashboard. Here you can see all your important information at a glance.
-        </ThemedText>
-      </ThemedView>
+    <ThemedView style={styles.container}>
+      <FlatList
+        data={posts}
+        keyExtractor={(item) => item.id}
+        renderItem={renderPostCard}
+        contentContainerStyle={styles.listContent}
+        refreshControl={
+          <RefreshControl 
+            refreshing={isRefreshing} 
+            onRefresh={handleRefresh}
+            tintColor={tint}
+          />
+        }
+        ListHeaderComponent={
+          <View style={styles.header}>
+            <ThemedText type="title" style={styles.headerTitle}>
+              Inspix Feed
+            </ThemedText>
+          </View>
+        }
+        ListEmptyComponent={
+          <ThemedView style={styles.emptyState}>
+            <ThemedText style={styles.emptyStateText}>No posts yet</ThemedText>
+            <ThemedText style={styles.emptyStateSubtext}>
+              Create the first post by tapping the plus button!
+            </ThemedText>
+          </ThemedView>
+        }
+      />
       
-      <ThemedView style={styles.card}>
-        <ThemedText type="subtitle">Recent Activity</ThemedText>
-        <ThemedView style={styles.activity}>
-          <ThemedText>No recent activity to show</ThemedText>
-        </ThemedView>
-      </ThemedView>
+      <FloatingActionButton 
+        onPress={() => setModalVisible(true)}
+        iconName="plus"
+        color={tint}
+        requiresAuth={true}
+      />
       
-      <ThemedView style={styles.card}>
-        <ThemedText type="subtitle">Quick Actions</ThemedText>
-        <ThemedView style={styles.quickActions}>
-          <ThemedView style={styles.actionItem}>
-            <ThemedText>View Profile</ThemedText>
-          </ThemedView>
-          <ThemedView style={styles.actionItem}>
-            <ThemedText>Explore Content</ThemedText>
-          </ThemedView>
-          <ThemedView style={styles.actionItem}>
-            <ThemedText>Settings</ThemedText>
-          </ThemedView>
-        </ThemedView>
-      </ThemedView>
-    </ParallaxScrollView>
+      <PostCreationModal
+        isVisible={modalVisible}
+        onClose={() => setModalVisible(false)}
+        onPostCreated={handlePostCreated}
+      />
+    </ThemedView>
   );
 }
 
 const styles = StyleSheet.create({
-  titleContainer: {
-    flexDirection: 'row',
+  container: {
+    flex: 1,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
     alignItems: 'center',
-    gap: 8,
   },
-  reactLogo: {
-    height: 178,
-    width: 290,
-    bottom: 0,
-    left: 0,
-    position: 'absolute',
-  },
-  card: {
-    backgroundColor: 'rgba(150, 150, 150, 0.1)',
-    borderRadius: 12,
+  listContent: {
     padding: 16,
-    marginVertical: 10,
-    gap: 8,
+    paddingBottom: 80, // Space for FAB
   },
-  activity: {
-    paddingVertical: 20,
+  header: {
+    marginBottom: 16,
+    paddingTop: 50, // Space for status bar
+  },
+  headerTitle: {
+    fontSize: 24,
+    fontWeight: 'bold',
+  },
+  emptyState: {
+    padding: 40,
     alignItems: 'center',
+    justifyContent: 'center',
   },
-  quickActions: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    flexWrap: 'wrap',
-    marginTop: 8,
+  emptyStateText: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginBottom: 8,
   },
-  actionItem: {
-    backgroundColor: 'rgba(100, 100, 100, 0.1)',
-    padding: 12,
-    borderRadius: 8,
-    alignItems: 'center',
-    width: '30%',
-    marginVertical: 5,
+  emptyStateSubtext: {
+    fontSize: 14,
+    textAlign: 'center',
+    opacity: 0.7,
   },
 });

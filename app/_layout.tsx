@@ -2,7 +2,8 @@ import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native
 import { useFonts } from 'expo-font';
 import { Stack, useRouter, useSegments } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
+import 'react-native-gesture-handler';
 import 'react-native-reanimated';
 
 import { AuthProvider, useAuth } from '@/context/AuthContext';
@@ -10,23 +11,39 @@ import { useColorScheme } from '@/hooks/useColorScheme';
 
 // Auth redirect component
 function AuthRedirect() {
-  const { session, isLoading } = useAuth();
+  const { session, isLoading, profileComplete, checkProfileComplete } = useAuth();
   const segments = useSegments();
   const router = useRouter();
+  const [checkedProfile, setCheckedProfile] = useState(false);
 
   useEffect(() => {
-    if (isLoading) return;
+    const checkAuth = async () => {
+      if (isLoading) return;
 
-    const inAuthGroup = segments[0] === '(auth)';
-    
-    if (!session && !inAuthGroup) {
-      // Redirect to sign in if not authenticated and not in auth group
-      router.replace('/(auth)/sign-in');
-    } else if (session && inAuthGroup) {
-      // Redirect to home if authenticated but still in auth group
-      router.replace('/(tabs)');
-    }
-  }, [session, segments, isLoading]);
+      const inAuthGroup = segments[0] === '(auth)';
+      const isProfileSetup = segments[1] === 'profile-setup';
+      
+      // Check if user has completed profile setup
+      let hasCompletedProfile = profileComplete;
+      if (session && !checkedProfile) {
+        hasCompletedProfile = await checkProfileComplete();
+        setCheckedProfile(true);
+      }
+
+      if (!session && !inAuthGroup) {
+        // Redirect to sign in if not authenticated and not in auth group
+        router.replace('/(auth)/sign-in');
+      } else if (session && !hasCompletedProfile && !isProfileSetup) {
+        // Redirect to profile setup if user hasn't completed profile
+        router.replace('/(auth)/profile-setup');
+      } else if (session && hasCompletedProfile && inAuthGroup && !isProfileSetup) {
+        // Redirect to home if authenticated with complete profile but still in auth group
+        router.replace('/(tabs)');
+      }
+    };
+
+    checkAuth();
+  }, [session, segments, isLoading, checkedProfile]);
 
   return null;
 }

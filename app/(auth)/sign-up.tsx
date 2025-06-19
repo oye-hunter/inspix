@@ -49,16 +49,21 @@ export default function SignUpScreen() {
     }
     
     try {
-      const { error } = await signUp(email, password);
+      const { error, data } = await signUp(email, password);
       
       if (error) {
         setErrorMessage(error.message);
         return;
       }
       
-      // Notify the user to check their email
-      // For Supabase, by default, email confirmation is enabled
-      setErrorMessage('Check your email for a confirmation link');
+      if (data.session) {
+        // If auto-confirmation is enabled or email confirmation is bypassed
+        // Navigate directly to profile setup
+        router.replace('/(auth)/profile-setup');
+      } else {
+        // Notify the user to check their email if email confirmation is required
+        setErrorMessage('Check your email for a confirmation link');
+      }
     } catch (error) {
       setErrorMessage('An unexpected error occurred');
       console.log('Sign up error:', error);

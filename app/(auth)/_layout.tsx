@@ -22,6 +22,13 @@ export default function AuthLayout() {
           headerShown: false 
         }} 
       />
+      <Stack.Screen 
+        name="profile-setup" 
+        options={{ 
+          headerShown: false,
+          gestureEnabled: false // Prevent going back from profile setup
+        }} 
+      />
     </Stack>
   );
 }
