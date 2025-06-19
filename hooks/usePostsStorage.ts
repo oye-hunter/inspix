@@ -536,6 +536,105 @@ export const usePostsStorage = () => {
     return null;
   };
 
+  // Get posts by a specific user
+  const fetchUserPosts = async (targetUserId?: string) => {
+    const userIdToFetch = targetUserId || userId;
+    
+    if (!session) return { data: [], error: 'User not authenticated' };
+    if (!userIdToFetch) return { data: [], error: 'No user ID provided' };
+  
+    try {
+      console.log('Fetching posts for user:', userIdToFetch);
+      
+      // Get posts for the specific user
+      const { data: postsData, error: postsError } = await supabase
+        .from('posts')
+        .select('*')
+        .eq('user_id', userIdToFetch)
+        .order('created_at', { ascending: false });
+
+      if (postsError) {
+        console.error('Error fetching user posts:', postsError);
+        throw postsError;
+      }
+      
+      if (!postsData || postsData.length === 0) {
+        console.log('No posts found for this user');
+        return { data: [], error: null };
+      }
+      
+      console.log(`Found ${postsData.length} posts for user ${userIdToFetch}`);
+      
+      // Get user info once for all posts since they're from the same user
+      const { data: userData } = await supabase
+        .from('user_info')
+        .select('user_name, name')
+        .eq('user_id', userIdToFetch)
+        .maybeSingle();
+        
+      // Add user info to all posts
+      const postsWithUserInfo = postsData.map(post => ({
+        ...post,
+        user_name: userData?.user_name || null,
+        name: userData?.name || null
+      }));
+      
+      // Then get likes information separately
+      const likes = await Promise.all(
+        postsWithUserInfo.map(async (post) => {
+          try {
+            // Get total likes count
+            const { count, error: countError } = await supabase
+              .from('likes')
+              .select('*', { count: 'exact', head: true })
+              .eq('post_id', post.id);
+              
+            if (countError) {
+              console.warn('Error getting likes count:', countError);
+              return { postId: post.id, count: 0, hasLiked: false };
+            }
+              
+            // Check if current user has liked this post
+            const { data: userLike, error: likeError } = await supabase
+              .from('likes')
+              .select('id')
+              .eq('post_id', post.id)
+              .eq('user_id', userId)
+              .maybeSingle();
+              
+            if (likeError) {
+              console.warn('Error checking if user liked post:', likeError);
+            }
+              
+            return { 
+              postId: post.id, 
+              count: count || 0, 
+              hasLiked: !!userLike
+            };
+          } catch (err) {
+            console.error('Error processing likes for post:', err);
+            return { postId: post.id, count: 0, hasLiked: false };
+          }
+        })
+      );
+
+      // Process the data to include likes_count and has_liked
+      const processedData = postsWithUserInfo.map((post) => {
+        const postLikes = likes.find((like) => like.postId === post.id);
+        return {
+          ...post,
+          likes_count: postLikes?.count || 0,
+          has_liked: postLikes?.hasLiked || false
+        };
+      });
+
+      return { data: processedData, error: null };
+    } catch (error) {
+      console.error('Error fetching user posts:', error);
+      return { data: [], error };
+    }
+  };
+
   return {
     isUploading,
     uploadProgress,
@@ -547,6 +646,7 @@ export const usePostsStorage = () => {
     likePost,
     unlikePost,
     addComment,
-    getComments
+    getComments,
+    fetchUserPosts
   };
 };

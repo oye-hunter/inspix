@@ -108,12 +108,13 @@ export default function ExploreScreen() {
         }
         ListHeaderComponent={
           <ThemedText type="title" style={styles.headerTitle}>
-            Trending Posts
+            Trending
           </ThemedText>
         }
         ListEmptyComponent={
           <ThemedView style={styles.emptyState}>
             <ThemedText style={styles.emptyStateText}>No trending posts yet</ThemedText>
+            <ThemedText style={styles.emptyStateSubText}>Popular posts will appear here</ThemedText>
           </ThemedView>
         }
       />
@@ -149,5 +150,10 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: 'bold',
     marginBottom: 8,
+  },
+  emptyStateSubText: {
+    fontSize: 16,
+    opacity: 0.7,
+    textAlign: 'center',
   },
 });

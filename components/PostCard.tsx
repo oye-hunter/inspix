@@ -5,7 +5,7 @@ import { supabase } from '@/lib/supabase';
 import { timeSince } from '@/utils/dateUtils';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import React, { useEffect, useState } from 'react';
+import React, { memo, useCallback, useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, Image, StyleSheet, TextInput, TouchableOpacity, View } from 'react-native';
 import { ThemedText } from './ThemedText';
 import { ThemedView } from './ThemedView';
@@ -16,7 +16,8 @@ type PostCardProps = {
   onCommentAdded: (postId: string, comment: Comment) => void;
 };
 
-export default function PostCard({ post, onLikeToggle, onCommentAdded }: PostCardProps) {
+// Create the component without memo first
+function PostCardComponent({ post, onLikeToggle, onCommentAdded }: PostCardProps) {
   const [isLiked, setIsLiked] = useState(post.has_liked || false);
   const [likesCount, setLikesCount] = useState(post.likes_count || 0);
   const [showComments, setShowComments] = useState(false);
@@ -30,6 +31,7 @@ export default function PostCard({ post, onLikeToggle, onCommentAdded }: PostCar
   const router = useRouter();
   const { session } = useAuth();
   
+  // Get methods directly from the hook - hooks must be at top level
   const { likePost, unlikePost, addComment, getComments } = usePostsStorage();
   
   // Get the signed URL for the image (needed for non-public buckets)
@@ -52,7 +54,7 @@ export default function PostCard({ post, onLikeToggle, onCommentAdded }: PostCar
     getSignedUrl();
   }, [post.image_path]);
   
-  const handleLikeToggle = async () => {
+  const handleLikeToggle = useCallback(async () => {
     // Check if the user is authenticated
     if (!session) {
       Alert.alert(
@@ -86,9 +88,9 @@ export default function PostCard({ post, onLikeToggle, onCommentAdded }: PostCar
       setLikesCount(likesCount);
       Alert.alert('Error', 'Failed to update like status');
     }
-  };
+  }, [isLiked, likesCount, session, router, post.id, likePost, unlikePost, onLikeToggle]);
   
-  const handleShowComments = async () => {
+  const handleShowComments = useCallback(async () => {
     if (showComments) {
       setShowComments(false);
       return;
@@ -111,9 +113,9 @@ export default function PostCard({ post, onLikeToggle, onCommentAdded }: PostCar
     } finally {
       setIsLoadingComments(false);
     }
-  };
+  }, [showComments, getComments, post.id]);
   
-  const handleAddComment = async () => {
+  const handleAddComment = useCallback(async () => {
     if (!commentText.trim()) return;
     
     setIsAddingComment(true);
@@ -137,13 +139,13 @@ export default function PostCard({ post, onLikeToggle, onCommentAdded }: PostCar
     } finally {
       setIsAddingComment(false);
     }
-  };
+  }, [commentText, addComment, post.id, comments, onCommentAdded]);
   
-  const navigateToProfile = (userId: string) => {
+  const navigateToProfile = useCallback((userId: string) => {
     // This would navigate to the user's profile
     // You can implement this later
     Alert.alert('Navigate to Profile', `Navigate to user: ${userId}`);
-  };
+  }, []);
   
   return (
     <ThemedView style={styles.card}>
@@ -257,6 +259,10 @@ export default function PostCard({ post, onLikeToggle, onCommentAdded }: PostCar
     </ThemedView>
   );
 }
+
+// Export the memoized component
+const PostCard = memo(PostCardComponent);
+export default PostCard;
 
 const styles = StyleSheet.create({
   card: {
