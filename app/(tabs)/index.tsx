@@ -31,14 +31,19 @@ export default function HomeScreen() {
   
   const loadPosts = async () => {
     try {
-      const { data, error } = await fetchPosts();
-      
-      if (error) {
-        console.error('Error fetching posts:', error);
-        return;
+      // Only fetch posts if user is logged in
+      if (session) {
+        const { data, error } = await fetchPosts();
+        
+        if (error) {
+          console.error('Error fetching posts:', error);
+          return;
+        }
+        
+        setPosts(data);
+      } else {
+        console.log('Not fetching posts - user not logged in');
       }
-      
-      setPosts(data);
     } catch (error) {
       console.error('Error in loadPosts:', error);
     } finally {

@@ -235,9 +235,16 @@ export default function PostCreationModal({ isVisible, onClose, onPostCreated }:
               disabled={!imageUri || isLoading}
             >
               {isLoading ? (
-                <ActivityIndicator color="#FFFFFF" />
+                <ActivityIndicator color={tint === '#ffffff' || tint === '#fff' ? '#000' : '#fff'} />
               ) : (
-                <ThemedText style={styles.postButtonText}>Post</ThemedText>
+                <ThemedText 
+                  style={[
+                    styles.postButtonText,
+                    { color: tint === '#ffffff' || tint === '#fff' ? '#000' : '#fff' }
+                  ]}
+                >
+                  Post
+                </ThemedText>
               )}
             </TouchableOpacity>
           </View>
@@ -344,7 +351,7 @@ const styles = StyleSheet.create({
     opacity: 0.5,
   },
   postButtonText: {
-    color: '#FFFFFF',
+    // Color is now defined inline based on theme
     fontWeight: 'bold',
     fontSize: 16,
   },

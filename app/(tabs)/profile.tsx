@@ -53,13 +53,17 @@ export default function ProfileScreen() {
 
   // Separate loading state management with stable references
   const loadPosts = useCallback(async () => {
-    if (!userId) return;
+    // Only load posts if user is logged in and we have a userId
+    if (!session || !userId) {
+      console.log('Not fetching profile posts - user not logged in or no user ID');
+      return;
+    }
     
     setIsLoadingPosts(true);
     await fetchUserPostsData();
     setIsLoadingPosts(false);
     setIsRefreshing(false);
-  }, [userId, fetchUserPostsData]);
+  }, [session, userId, fetchUserPostsData]);
 
   // Effect that only runs on mount and when the fetchTrigger changes
   useEffect(() => {

@@ -27,20 +27,25 @@ export default function ExploreScreen() {
   
   const loadPosts = async () => {
     try {
-      const { data, error } = await fetchPosts();
-      
-      if (error) {
-        console.error('Error fetching posts:', error);
-        return;
+      // Only fetch posts if user is logged in
+      if (session) {
+        const { data, error } = await fetchPosts();
+        
+        if (error) {
+          console.error('Error fetching posts:', error);
+          return;
+        }
+        
+        // For the explore tab, we could implement different sorting or filtering
+        // For now, just use the same posts but sorted by likes
+        const sortedPosts = [...data].sort((a, b) => 
+          (b.likes_count || 0) - (a.likes_count || 0)
+        );
+        
+        setPosts(sortedPosts);
+      } else {
+        console.log('Not fetching posts - user not logged in');
       }
-      
-      // For the explore tab, we could implement different sorting or filtering
-      // For now, just use the same posts but sorted by likes
-      const sortedPosts = [...data].sort((a, b) => 
-        (b.likes_count || 0) - (a.likes_count || 0)
-      );
-      
-      setPosts(sortedPosts);
     } catch (error) {
       console.error('Error in loadPosts:', error);
     } finally {

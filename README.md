@@ -8,7 +8,7 @@ Inspix is a mobile social media application built with Expo and React Native, us
 - 🖼️ **Image Posting**: Upload images from camera or gallery
 - ❤️ **Social Interactions**: Like and comment on posts
 - 👤 **User Profiles**: View and edit user profiles
-- 🌓 **Theme Support**: Light and dark mode
+- 🌓 **Theme Support**: Light and dark mode with user-controlled theme toggle
 - 📊 **Feed and Trending**: View posts from all users or trending content
 
 ## Tech Stack
@@ -32,6 +32,8 @@ Inspix is a mobile social media application built with Expo and React Native, us
   - [Expo FileSystem](https://docs.expo.dev/versions/latest/sdk/filesystem/) - File operations
   - [Expo SecureStore](https://docs.expo.dev/versions/latest/sdk/securestore/) - Secure credential storage
   - [React Native NetInfo](https://github.com/react-native-netinfo/react-native-netinfo) - Network connectivity
+  - [EAS Build](https://docs.expo.dev/build/introduction/) - For building native app binaries
+  - [Expo Haptics](https://docs.expo.dev/versions/latest/sdk/haptics/) - For haptic feedback
 
 ## Project Structure
 
@@ -49,7 +51,8 @@ inspix/
 ├── constants/                # App constants
 │   └── Colors.ts             # Color scheme definitions
 ├── context/                  # React Context providers
-│   └── AuthContext.tsx       # Authentication state management
+│   ├── AuthContext.tsx       # Authentication state management
+│   └── ThemeContext.tsx      # Theme management (light/dark mode)
 ├── hooks/                    # Custom React hooks
 │   ├── useColorScheme.ts     # Theme management
 │   ├── useThemeColor.ts      # Theme color utilities
@@ -120,6 +123,65 @@ npx expo start
 - For iOS: `npx expo run:ios`
 - For Android: `npx expo run:android`
 - Using Expo Go: Scan the QR code from the Expo CLI with the Expo Go app
+
+## Building for Production
+
+### EAS Build for Android
+
+This project uses [EAS Build](https://docs.expo.dev/build/introduction/) for creating Android APKs and app bundles.
+
+1. Install the EAS CLI if you haven't already:
+```bash
+npm install -g eas-cli
+```
+
+2. Login to your Expo account:
+```bash
+eas login
+```
+
+3. Configure your project for EAS Build:
+```bash
+eas build:configure
+```
+
+4. Build for Android:
+
+   For an internal preview build (APK):
+   ```bash
+   eas build --platform android --profile preview
+   ```
+
+   For a production build (App Bundle):
+   ```bash
+   eas build --platform android --profile production
+   ```
+
+5. Once the build completes, you'll receive a link to download the APK or app bundle.
+
+The project's `eas.json` file is already configured with different build profiles:
+- `development` - For development client builds
+- `preview` - For internal testing (generates APK)
+- `production` - For Play Store submissions (generates AAB)
+
+## Troubleshooting
+
+### Common Build Issues
+
+1. **"Error fetching posts: User not authenticated"**:
+   - This error occurs when trying to fetch posts without being authenticated
+   - Solution: Make sure the app properly checks for authentication before making API calls
+   - In the tab components, we check for session existence before fetching posts
+
+2. **Environment Variables in EAS Build**:
+   - If environment variables aren't working in EAS builds, check your `eas.json` configuration
+   - You can provide environment variables directly in the `eas.json` file or use EAS secrets
+   - To add secrets: `eas secret:create --scope project --name EXPO_PUBLIC_SUPABASE_URL --value "your_value"`
+
+3. **Android Build Failures**:
+   - Make sure `app.json` has the correct Android package name configuration
+   - Verify that all native dependencies are compatible
+   - Check if the keystore settings are correct in your EAS configuration
 
 ## Contributing
 
