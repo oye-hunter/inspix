@@ -248,9 +248,9 @@ function PostCardComponent({ post, onLikeToggle, onCommentAdded }: PostCardProps
               disabled={!commentText.trim() || isAddingComment}
             >
               {isAddingComment ? (
-                <ActivityIndicator size="small" color="#FFFFFF" />
+                <ActivityIndicator size="small" color={tint === '#ffffff' || tint === '#fff' ? '#000' : '#fff'} />
               ) : (
-                <MaterialIcons name="send" size={24} color="#FFFFFF" />
+                <MaterialIcons name="send" size={24} color={tint === '#ffffff' || tint === '#fff' ? '#000' : '#fff'} />
               )}
             </TouchableOpacity>
           </View>
